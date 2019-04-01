@@ -37,30 +37,118 @@ public class CorsoDAO {
 				System.out.println(codins + " " + numeroCrediti + " " + nome + " " + periodoDidattico);
 
 				// Crea un nuovo JAVA Bean Corso
+				Corso c= new Corso(codins,numeroCrediti,nome,periodoDidattico); 
 				// Aggiungi il nuovo oggetto Corso alla lista corsi
+				corsi.add(c); 
 			}
-
+			
+			
+          //conn.close();
 			return corsi;
+			
 
 		} catch (SQLException e) {
 			// e.printStackTrace();
 			throw new RuntimeException("Errore Db");
 		}
+		
+		
 	}
 
 	/*
 	 * Dato un codice insegnamento, ottengo il corso
 	 */
-	public void getCorso(Corso corso) {
-		// TODO
+	
+	public Corso getCorso(String codice) {
+		
+		
+		
+	List<Corso> temp= this.getTuttiICorsi(); 
+	Corso res = new Corso("",0,"",0); 
+
+	for (Corso c: temp) {
+		if(c.getCodins().equals(codice)) {
+		res.setCodins(c.getCodins());
+		res.setNome(c.getNome());
+		res.setPd(c.getPd());
+		res.setCrediti(c.getCrediti());
+			break; 
+		}
 	}
+	
+	if(res.getCodins().equals("")) {
+		
+		return null; 
+	}
+	else 
+		return  res; 
+	
+	
+	
+	
+	}
+	
 
 	/*
 	 * Ottengo tutti gli studenti iscritti al Corso
 	 */
-	public void getStudentiIscrittiAlCorso(Corso corso) {
-		// TODO
-	}
+	public List<Studente> getStudentiIscrittiAlCorso(Corso corso) {
+		final String sql = "SELECT matricola FROM iscrizione WHERE codins LIKE ?";
+		List<Studente> studenti = new LinkedList<Studente>();
+		
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, corso.getCodins());
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				StudenteDAO s= new StudenteDAO(); 
+				int matr= rs.getInt("matricola"); 
+				Studente stu= s.getStudentePerMatricola(matr); 
+				studenti.add(stu); 
+				
+				}
+			//conn.close();
+			}
+		catch (SQLException e) {
+				// e.printStackTrace();
+				throw new RuntimeException("Errore Db");
+			}
+		return studenti; 
+			
+		}
+	
+	
+	public List<Corso> getCorsiSeguitiDaUnoStudente(Studente s) {
+		final String sql = "SELECT codins FROM iscrizione WHERE matricola LIKE ?";
+		List<Corso> corsi = new LinkedList<Corso>();
+		
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, s.getMatricola());
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				
+				String cod= rs.getString("codins");
+				corsi.add(this.getCorso(cod)); 
+				
+				}
+			
+			//conn.close();
+			}
+		catch (SQLException e) {
+				// e.printStackTrace();
+				throw new RuntimeException("Errore Db");
+			}
+	
+		return corsi; 
+			
+		}
+		
+	
 
 	/*
 	 * Data una matricola ed il codice insegnamento, iscrivi lo studente al corso.
